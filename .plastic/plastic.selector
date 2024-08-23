@@ -1,4 +1,0 @@
-repository "Unity-SRP@relolihentai@cloud.cn"
-  path "/"
-    br "/main"
-    co "/main"
