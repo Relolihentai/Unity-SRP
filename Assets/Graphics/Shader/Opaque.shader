@@ -1,8 +1,9 @@
-Shader "ToyShader/Base"
+Shader "ToyShader/Opaque"
 {
     Properties
     {
         _MainTex ("Texture", 2D) = "white" {}
+        _BaseColor ("Base Color", Color) = (1, 1, 1, 1)
     }
     SubShader
     {
@@ -19,6 +20,8 @@ Shader "ToyShader/Base"
         {
             sampler2D _MainTex;
             float4 _MainTex_ST;
+
+            float4 _BaseColor;
         }
         ENDHLSL
 
@@ -27,8 +30,6 @@ Shader "ToyShader/Base"
             HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
-
-            
 
             struct appdata
             {
@@ -47,7 +48,7 @@ Shader "ToyShader/Base"
             v2f vert (appdata v)
             {
                 v2f o;
-                o.vertex = TransformObjectToHClip(v.vertex);
+                o.vertex = TransformObjectToHClip(v.vertex.xyz);
                 o.uv = TRANSFORM_TEX(v.uv, _MainTex);
                 o.normal = v.normal;
                 return o;
@@ -57,7 +58,7 @@ Shader "ToyShader/Base"
             {
                 float3 color = tex2D(_MainTex, i.uv).rgb;
                 float3 normal = i.normal;
-                GT0 = float4(color, 1);
+                GT0 = float4(color * _BaseColor.rgb, 1);
                 GT1 = float4(normal * 0.5 + 0.5, 0);
                 GT2 = float4(1, 1, 0, 1);
                 GT3 = float4(0, 0, 1, 1);

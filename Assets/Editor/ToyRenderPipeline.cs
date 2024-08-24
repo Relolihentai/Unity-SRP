@@ -27,32 +27,31 @@ public class ToyRenderPipeline : RenderPipeline
             gBufferID[i] = gBuffers[i];
         }
         
-        
-        
         GraphicsSettings.useScriptableRenderPipelineBatching = true;
     }
     
     protected override void Render(ScriptableRenderContext context, Camera[] cameras)
     {
-        Camera camera = cameras[0];
-        context.SetupCameraProperties(camera);
-        
-        cmd.SetRenderTarget(gBufferID, gDepth);
-        cmd.SetGlobalTexture("_GDepth", gDepth);
-        for (int i = 0; i < 4; i++)
+        foreach (var camera in cameras)
         {
-            cmd.SetGlobalTexture("_GT" + i, gBuffers[i]);
+            context.SetupCameraProperties(camera);
+            cmd.SetRenderTarget(gBufferID, gDepth);
+            cmd.SetGlobalTexture("_GDepth", gDepth);
+            for (int i = 0; i < 4; i++)
+            {
+                cmd.SetGlobalTexture("_GT" + i, gBuffers[i]);
+            }
+        
+            context.ExecuteCommandBuffer(cmd);
+        
+            cmd.Clear();
+        
+            CameraRenderer cameraRenderer = new CameraRenderer();
+            cameraRenderer.Render(context, camera);
+        
+            DrawLightPass(context, camera);
+            context.Submit();
         }
-        
-        context.ExecuteCommandBuffer(cmd);
-        
-        cmd.Clear();
-        
-        CameraRenderer cameraRenderer = new CameraRenderer();
-        cameraRenderer.Render(context, camera);
-        
-        DrawLightPass(context, camera);
-        context.Submit();
     }
     void DrawLightPass(ScriptableRenderContext context, Camera camera)
     {
