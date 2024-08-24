@@ -10,8 +10,12 @@ public class ToyRenderPipeline : RenderPipeline
     private RenderTexture[] gBuffers = new RenderTexture[4];
     private RenderTargetIdentifier[] gBufferID = new RenderTargetIdentifier[4];
 
+    private CommandBuffer cmd;
     public ToyRenderPipeline()
     {
+        cmd = new CommandBuffer();
+        cmd.name = "GBuffer";
+        
         gDepth = new RenderTexture(Screen.width, Screen.height, 24, RenderTextureFormat.Depth, RenderTextureReadWrite.Linear);
         gBuffers[0] = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Linear);
         gBuffers[1] = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGB2101010, RenderTextureReadWrite.Linear);
@@ -22,7 +26,9 @@ public class ToyRenderPipeline : RenderPipeline
         {
             gBufferID[i] = gBuffers[i];
         }
-
+        
+        
+        
         GraphicsSettings.useScriptableRenderPipelineBatching = true;
     }
     
@@ -30,9 +36,6 @@ public class ToyRenderPipeline : RenderPipeline
     {
         Camera camera = cameras[0];
         context.SetupCameraProperties(camera);
-
-        CommandBuffer cmd = new CommandBuffer();
-        cmd.name = "GBuffer";
         
         cmd.SetRenderTarget(gBufferID, gDepth);
         cmd.SetGlobalTexture("_GDepth", gDepth);
@@ -41,39 +44,17 @@ public class ToyRenderPipeline : RenderPipeline
             cmd.SetGlobalTexture("_GT" + i, gBuffers[i]);
         }
         
-        //清屏
-        cmd.ClearRenderTarget(true, true, Color.red);
-        //ScriptableRenderContext接受图形命令
         context.ExecuteCommandBuffer(cmd);
-
-        //剔除
-        camera.TryGetCullingParameters(out var cullingParameters);
-        var cullingResults = context.Cull(ref cullingParameters);
-
-        //DrawRenderers的配置
-        ShaderTagId shaderTagId = new ShaderTagId("GBuffer");
-        SortingSettings sortingSettings = new SortingSettings(camera);
-        DrawingSettings drawingSettings = new DrawingSettings(shaderTagId, sortingSettings);
-        FilteringSettings filteringSettings = FilteringSettings.defaultValue;
         
-        //绘制
-        context.DrawRenderers(cullingResults, ref drawingSettings, ref filteringSettings);
+        cmd.Clear();
         
-        //skybox gizmos
-        context.DrawSkybox(camera);
-        if (Handles.ShouldRenderGizmos())
-        {
-            context.DrawGizmos(camera, GizmoSubset.PreImageEffects);
-            context.DrawGizmos(camera, GizmoSubset.PostImageEffects);
-        }
+        CameraRenderer cameraRenderer = new CameraRenderer();
+        cameraRenderer.Render(context, camera);
         
-        LightPass(context, camera);
-        
-        //submit的时候才会提交命令
+        DrawLightPass(context, camera);
         context.Submit();
     }
-
-    void LightPass(ScriptableRenderContext context, Camera camera)
+    void DrawLightPass(ScriptableRenderContext context, Camera camera)
     {
         CommandBuffer cmd = new CommandBuffer();
         cmd.name = "lightPass";
