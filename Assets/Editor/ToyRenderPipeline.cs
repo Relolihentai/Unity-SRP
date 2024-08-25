@@ -10,11 +10,14 @@ public class ToyRenderPipeline : RenderPipeline
     private RenderTexture[] gBuffers = new RenderTexture[4];
     private RenderTargetIdentifier[] gBufferID = new RenderTargetIdentifier[4];
 
+    private CameraRenderer cameraRenderer;
     private CommandBuffer cmd;
     public ToyRenderPipeline()
     {
         cmd = new CommandBuffer();
         cmd.name = "GBuffer";
+
+        cameraRenderer = new CameraRenderer();
         
         gDepth = new RenderTexture(Screen.width, Screen.height, 24, RenderTextureFormat.Depth, RenderTextureReadWrite.Linear);
         gBuffers[0] = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Linear);
@@ -41,12 +44,9 @@ public class ToyRenderPipeline : RenderPipeline
             {
                 cmd.SetGlobalTexture("_GT" + i, gBuffers[i]);
             }
-        
             context.ExecuteCommandBuffer(cmd);
-        
             cmd.Clear();
         
-            CameraRenderer cameraRenderer = new CameraRenderer();
             cameraRenderer.Render(context, camera);
         
             DrawLightPass(context, camera);
