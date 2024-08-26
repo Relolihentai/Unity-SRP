@@ -22,6 +22,8 @@ Shader "ToyShader/Base"
         Blend [_SrcBlend][_DstBlend]
         
         HLSLINCLUDE
+        //不生成OpenGL ES 2.0等图形API的着色器变体，其不支持可变次数的循环与线性颜色空间
+        #pragma target 3.5
         #include "Assets/ToyRenderPipeline/ShaderLibrary/LitDeferredWritePass.hlsl"
         ENDHLSL
 

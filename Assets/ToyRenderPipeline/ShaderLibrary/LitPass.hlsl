@@ -22,8 +22,8 @@ struct LitPassAttributes
 
 struct LitPassVaryings
 {
-    float2 uv : TEXCOORD0;
     float4 vertex : SV_POSITION;
+    float2 uv : TEXCOORD0;
 };
 
 LitPassVaryings LitPassVertex (LitPassAttributes v)

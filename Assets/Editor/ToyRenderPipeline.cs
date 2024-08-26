@@ -21,7 +21,7 @@ public class ToyRenderPipeline : RenderPipeline
         cameraRenderer = new CameraRenderer();
         lighting = new Lighting();
         
-        gDepth = new RenderTexture(Screen.width, Screen.height, 24, RenderTextureFormat.Depth, RenderTextureReadWrite.Linear);
+        gDepth = new RenderTexture(Screen.width, Screen.height, 32, RenderTextureFormat.Depth, RenderTextureReadWrite.Linear);
         gBuffers[0] = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Linear);
         gBuffers[1] = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGB2101010, RenderTextureReadWrite.Linear);
         gBuffers[2] = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGB64, RenderTextureReadWrite.Linear);
