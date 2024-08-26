@@ -10,9 +10,9 @@ public partial class CameraRenderer
     private ScriptableRenderContext context;
     private Camera camera;
     private CommandBuffer cmd;
-    private CullingResults cullingResults;
     private CameraClearFlags clearFlags;
     
+    public CullingResults cullingResults;
     public CameraRenderer()
     {
         cmd = new CommandBuffer();
@@ -27,7 +27,6 @@ public partial class CameraRenderer
         Setup();
         DrawSceneWindowUI();
         DrawVisibleGeometry();
-        DrawGizmos();
         DrawUnsupportedShaders();
         Submit();
     }
@@ -59,7 +58,6 @@ public partial class CameraRenderer
         var drawingSettings = new DrawingSettings(shaderTagId, sortingSettings);
         var filteringSettings = new FilteringSettings(RenderQueueRange.opaque);
         context.DrawRenderers(cullingResults, ref drawingSettings, ref filteringSettings);
-        context.DrawSkybox(camera);
         //绘制顺序从后往前
         sortingSettings.criteria = SortingCriteria.CommonTransparent;
         drawingSettings.sortingSettings = sortingSettings;
@@ -76,7 +74,7 @@ public partial class CameraRenderer
     
     partial void DrawUnsupportedShaders();
     partial void DrawSceneWindowUI();
-    partial void DrawGizmos();
+    
     partial void SetCmdNameByCameraName();
 #if UNITY_EDITOR
     private static ShaderTagId[] legacyShaderTagIds =
@@ -114,14 +112,6 @@ public partial class CameraRenderer
         if (camera.cameraType == CameraType.SceneView)
         {
             ScriptableRenderContext.EmitWorldGeometryForSceneView(camera);
-        }
-    }
-    partial void DrawGizmos()
-    {
-        if (Handles.ShouldRenderGizmos())
-        {
-            context.DrawGizmos(camera, GizmoSubset.PreImageEffects);
-            context.DrawGizmos(camera, GizmoSubset.PostImageEffects);
         }
     }
 

@@ -14,5 +14,7 @@ float4x4 unity_MatrixInvV;
 CBUFFER_END
 
 float4x4 unity_MatrixVP;
+float4 _ZBufferParams;
+float4 _ScreenParams;
 
 #endif

@@ -11,6 +11,7 @@ public class ToyRenderPipeline : RenderPipeline
     private RenderTargetIdentifier[] gBufferID = new RenderTargetIdentifier[4];
 
     private CameraRenderer cameraRenderer;
+    private Lighting lighting;
     private CommandBuffer cmd;
     public ToyRenderPipeline()
     {
@@ -18,6 +19,7 @@ public class ToyRenderPipeline : RenderPipeline
         cmd.name = "GBuffer";
 
         cameraRenderer = new CameraRenderer();
+        lighting = new Lighting();
         
         gDepth = new RenderTexture(Screen.width, Screen.height, 24, RenderTextureFormat.Depth, RenderTextureReadWrite.Linear);
         gBuffers[0] = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Linear);
@@ -29,8 +31,8 @@ public class ToyRenderPipeline : RenderPipeline
         {
             gBufferID[i] = gBuffers[i];
         }
-        
         GraphicsSettings.useScriptableRenderPipelineBatching = true;
+        
     }
     
     protected override void Render(ScriptableRenderContext context, Camera[] cameras)
@@ -38,6 +40,7 @@ public class ToyRenderPipeline : RenderPipeline
         foreach (var camera in cameras)
         {
             context.SetupCameraProperties(camera);
+            
             cmd.SetRenderTarget(gBufferID, gDepth);
             cmd.SetGlobalTexture("_GDepth", gDepth);
             for (int i = 0; i < 4; i++)
@@ -46,10 +49,20 @@ public class ToyRenderPipeline : RenderPipeline
             }
             context.ExecuteCommandBuffer(cmd);
             cmd.Clear();
-        
+            
             cameraRenderer.Render(context, camera);
-        
+            
+            lighting.Setup(context, cameraRenderer.cullingResults);
+            
             DrawLightPass(context, camera);
+            
+            context.DrawSkybox(camera);
+            if (Handles.ShouldRenderGizmos())
+            {
+                context.DrawGizmos(camera, GizmoSubset.PreImageEffects);
+                context.DrawGizmos(camera, GizmoSubset.PostImageEffects);
+            }
+            
             context.Submit();
         }
     }
@@ -58,7 +71,7 @@ public class ToyRenderPipeline : RenderPipeline
         CommandBuffer cmd = new CommandBuffer();
         cmd.name = "lightPass";
         Material material = new Material(Shader.Find("ToyRenderPipeline/lightPass"));
-        cmd.Blit(gBufferID[0], BuiltinRenderTextureType.CameraTarget, material);
+        cmd.Blit(null, BuiltinRenderTextureType.CameraTarget, material);
         context.ExecuteCommandBuffer(cmd);
     }
 }

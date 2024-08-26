@@ -1,4 +1,4 @@
-Shader "ToyShader/Base"
+Shader "ToyShader/LitDeferredWrite"
 {
     Properties
     {
@@ -22,14 +22,14 @@ Shader "ToyShader/Base"
         Blend [_SrcBlend][_DstBlend]
         
         HLSLINCLUDE
-        #include "Assets/ToyRenderPipeline/ShaderLibrary/LitDeferredWritePass.hlsl"
+        #include "Assets/ToyRenderPipeline/ShaderLibrary/LitPass.hlsl"
         ENDHLSL
 
         Pass
         {
             HLSLPROGRAM
-            #pragma vertex LitDeferredWritePassVertex
-            #pragma fragment LitDeferredWriteFragment
+            #pragma vertex LitPassVertex
+            #pragma fragment LitPassFragment
             #pragma multi_compile_instancing
             #pragma shader_feature _ALPHACLIP
             ENDHLSL
