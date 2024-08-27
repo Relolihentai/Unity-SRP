@@ -2,11 +2,12 @@
 #define TOY_LIT_DEFERRED_WRITE_PASS_INCLUDE
 
 #include "Common.hlsl"
-//#include "Lighting.hlsl"
 
 UNITY_INSTANCING_BUFFER_START(UnityPerMaterial)
     UNITY_DEFINE_INSTANCED_PROP(float4, _MainTex_ST)
     UNITY_DEFINE_INSTANCED_PROP(float4, _BaseColor)
+    UNITY_DEFINE_INSTANCED_PROP(float, _Metallic)
+    UNITY_DEFINE_INSTANCED_PROP(float, _Roughness)
     UNITY_DEFINE_INSTANCED_PROP(float, _AlphaClip)
     UNITY_DEFINE_INSTANCED_PROP(float, _AlphaClipOff)
 UNITY_INSTANCING_BUFFER_END(UnityPerMaterial)
@@ -51,14 +52,13 @@ void LitDeferredWriteFragment (LitDeferredWritePassVaryings i, out float4 GT0 : 
     #ifdef _ALPHACLIP
     clip(color.a * baseColor.a - _AlphaClipOff);
     #endif
-    // Surface surface;
-    // surface.color = color.rgb * baseColor.rgb;
-    // surface.alpha = color.a * baseColor.a;
-    // surface.normal = TransformObjectToWorldNormal(i.normal);
+
+    float roughness = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _Roughness);
+    float metallic = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _Metallic);
     
     GT0 = baseColor * color;
     GT1 = float4(i.worldNormal * 0.5 + 0.5, 0);
-    GT2 = float4(1, 1, 0, 1);
+    GT2 = float4(0, 0, roughness, metallic);
     GT3 = float4(0, 0, 1, 1);
 }
 

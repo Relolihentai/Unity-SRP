@@ -4,6 +4,8 @@ Shader "ToyShader/Base"
     {
         _MainTex ("Texture", 2D) = "white" {}
         _BaseColor ("Base Color", Color) = (1, 1, 1, 1)
+        _Metallic ("Metallic", Range(0, 1)) = 0
+        _Roughness ("Roughness", Range(0, 1)) = 0
         
         [Enum(UnityEngine.Rendering.BlendMode)]_SrcBlend("Src Blend",Float) = 1
         [Enum(UnityEngine.Rendering.BlendMode)]_DstBlend("Dst Blend",Float) = 0

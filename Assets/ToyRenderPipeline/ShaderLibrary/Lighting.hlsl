@@ -1,25 +1,15 @@
 #ifndef TOY_LIGHTING_INCLUDE
 #define TOY_LIGHTING_INCLUDE
 
-#include "Light.hlsl"
-#include "Surface.hlsl"
 
-float3 IncomingLight(Surface surface, Light light)
-{
-    return saturate(dot(surface.normal, light.direction)) * light.color;
-}
+#include "BRDF.hlsl"
 
-float3 GetLighting(Surface surface,Light light)
-{
-    return IncomingLight(surface,light) * surface.color;
-}
-
-float3 GetLighting(Surface surface)
+float3 GetLitLighting(Surface surface)
 {
     float3 color = 0;
     for (int i = 0; i < GetDirectionalLightCount(); i++)
     {
-        color += GetLighting(surface, GetDirectionalLight(i));
+        color += LitDirectLight(surface, GetDirectionalLight(i));
     }
     return color;
 }

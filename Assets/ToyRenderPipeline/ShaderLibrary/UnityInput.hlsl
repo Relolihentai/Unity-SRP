@@ -16,5 +16,9 @@ CBUFFER_END
 float4x4 unity_MatrixVP;
 float4 _ZBufferParams;
 float4 _ScreenParams;
+float4 _ProjectionParams;
+
+float4 Toy_WorldSpaceCameraPos;
+float4x4 Toy_CameraInvProjection;
 
 #endif

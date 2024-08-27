@@ -13,6 +13,9 @@ public partial class CameraRenderer
     private CameraClearFlags clearFlags;
     
     public CullingResults cullingResults;
+
+    private static int Toy_WorldSpaceCameraPosID = Shader.PropertyToID("Toy_WorldSpaceCameraPos");
+    private static int Toy_CameraInvProjectionID = Shader.PropertyToID("Toy_CameraInvProjection");
     public CameraRenderer()
     {
         cmd = new CommandBuffer();
@@ -25,6 +28,7 @@ public partial class CameraRenderer
         this.camera = camera;
         
         Setup();
+        SetGlobalVectors();
         DrawSceneWindowUI();
         DrawVisibleGeometry();
         DrawUnsupportedShaders();
@@ -63,6 +67,13 @@ public partial class CameraRenderer
         drawingSettings.sortingSettings = sortingSettings;
         filteringSettings.renderQueueRange = RenderQueueRange.transparent;
         context.DrawRenderers(cullingResults, ref drawingSettings, ref filteringSettings);
+    }
+
+    void SetGlobalVectors()
+    {
+        cmd.SetGlobalVector(Toy_WorldSpaceCameraPosID, camera.transform.position);
+        cmd.SetGlobalMatrix(Toy_CameraInvProjectionID, camera.projectionMatrix.inverse);
+        ExecuteBuffer();
     }
     
     void Submit()
