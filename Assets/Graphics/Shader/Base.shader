@@ -21,6 +21,7 @@ Shader "ToyShader/Base"
         }
         
         ZWrite [_ZWrite]
+        ZTest LEqual
         Blend [_SrcBlend][_DstBlend]
         
         HLSLINCLUDE

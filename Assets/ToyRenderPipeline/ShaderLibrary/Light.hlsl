@@ -24,7 +24,7 @@ Light GetDirectionalLight(int index)
 {
     Light light;
     light.color = _DirectionalLightColors[index].rgb;
-    light.direction = _DirectionalLightDirections[index].xyz;
+    light.direction = normalize(_DirectionalLightDirections[index].xyz);
     return light;
 }
 

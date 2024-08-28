@@ -70,6 +70,7 @@ float3 LitDirectLight(Surface surface, Light light)
     float3 Kd = (1 - Ks) * (1 - surface.metallic);
     float3 DirectDiffColor = Kd * surface.color * light.color * nol;
     float3 DirectColor = DirectSpecColor + DirectDiffColor;
+    //return nol * surface.color;
     return DirectColor;
 }
 

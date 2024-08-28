@@ -13,6 +13,8 @@ public class ToyRenderPipeline : RenderPipeline
     private CameraRenderer cameraRenderer;
     private Lighting lighting;
     private CommandBuffer cmd;
+
+    public Vector2 ScreenResolution;
     public ToyRenderPipeline()
     {
         cmd = new CommandBuffer();
@@ -32,13 +34,13 @@ public class ToyRenderPipeline : RenderPipeline
             gBufferID[i] = gBuffers[i];
         }
         GraphicsSettings.useScriptableRenderPipelineBatching = true;
-        
     }
     
     protected override void Render(ScriptableRenderContext context, Camera[] cameras)
     {
         foreach (var camera in cameras)
         {
+            Debug.Log("Screen Width : " + Screen.width + "Screen Height : " + Screen.height);
             context.SetupCameraProperties(camera);
             
             cmd.SetRenderTarget(gBufferID, gDepth);

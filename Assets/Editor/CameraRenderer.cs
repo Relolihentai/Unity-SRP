@@ -15,7 +15,9 @@ public partial class CameraRenderer
     public CullingResults cullingResults;
 
     private static int Toy_WorldSpaceCameraPosID = Shader.PropertyToID("Toy_WorldSpaceCameraPos");
-    private static int Toy_CameraInvProjectionID = Shader.PropertyToID("Toy_CameraInvProjection");
+    private static int Toy_MatrixInvPID = Shader.PropertyToID("Toy_MatrixInvP");
+    private static int Toy_MatrixInvVID = Shader.PropertyToID("Toy_MatrixInvV");
+    private static int Toy_MatrixInvVPID = Shader.PropertyToID("Toy_MatrixInvVP");
     public CameraRenderer()
     {
         cmd = new CommandBuffer();
@@ -72,7 +74,9 @@ public partial class CameraRenderer
     void SetGlobalVectors()
     {
         cmd.SetGlobalVector(Toy_WorldSpaceCameraPosID, camera.transform.position);
-        cmd.SetGlobalMatrix(Toy_CameraInvProjectionID, camera.projectionMatrix.inverse);
+        cmd.SetGlobalMatrix(Toy_MatrixInvPID, camera.projectionMatrix.inverse);
+        cmd.SetGlobalMatrix(Toy_MatrixInvVID, camera.cameraToWorldMatrix);
+        cmd.SetGlobalMatrix(Toy_MatrixInvVPID, (camera.projectionMatrix * camera.cameraToWorldMatrix.inverse).inverse);
         ExecuteBuffer();
     }
     

@@ -45,12 +45,13 @@ float4 LitPassFragment (LitPassVaryings i, out float depthout : SV_Depth) : SV_T
     depthout = rawDepth;
     float depth = Linear01Depth(rawDepth, _ZBufferParams);
 
+    //这里就是NDC坐标
     float4 ndcPos = float4(i.uv * 2 - 1, rawDepth, 1);
     float far = _ProjectionParams.z;
     float3 clipVec = float3(ndcPos.x, ndcPos.y, 1.0) * far;
-    float3 viewVec = mul(Toy_CameraInvProjection, clipVec.xyzz).xyz;
+    float3 viewVec = mul(Toy_MatrixInvP, clipVec.xyzz).xyz;
     float3 viewPos = viewVec * depth;
-    float3 worldPos = mul(UNITY_MATRIX_I_V, float4(viewPos, 1.0)).xyz;
+    float3 worldPos = mul(Toy_MatrixInvV, float4(viewPos, 1.0)).xyz;
     
     Surface surface;
     surface.color = color;
@@ -60,7 +61,7 @@ float4 LitPassFragment (LitPassVaryings i, out float depthout : SV_Depth) : SV_T
     surface.roughness = roughness;
 
     float3 finalColor = GetLitLighting(surface);
-    return float4(finalColor, 1);
+    return float4(finalColor.xyz, 1);
 }
 
 #endif

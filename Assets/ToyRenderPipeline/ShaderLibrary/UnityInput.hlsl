@@ -19,6 +19,8 @@ float4 _ScreenParams;
 float4 _ProjectionParams;
 
 float4 Toy_WorldSpaceCameraPos;
-float4x4 Toy_CameraInvProjection;
+float4x4 Toy_MatrixInvP;
+float4x4 Toy_MatrixInvV;
+float4x4 Toy_MatrixInvVP;
 
 #endif
