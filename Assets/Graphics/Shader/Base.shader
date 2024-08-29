@@ -27,16 +27,30 @@ Shader "ToyShader/Base"
         HLSLINCLUDE
         //不生成OpenGL ES 2.0等图形API的着色器变体，其不支持可变次数的循环与线性颜色空间
         #pragma target 3.5
-        #include "Assets/ToyRenderPipeline/ShaderLibrary/LitDeferredWritePass.hlsl"
+        
         ENDHLSL
 
         Pass
         {
+            Name "DeferredWrite"
             HLSLPROGRAM
             #pragma vertex LitDeferredWritePassVertex
             #pragma fragment LitDeferredWriteFragment
             #pragma multi_compile_instancing
             #pragma shader_feature _ALPHACLIP
+            #include "Assets/ToyRenderPipeline/ShaderLibrary/LitDeferredWritePass.hlsl"
+            ENDHLSL
+        }
+
+        Pass
+        {
+            Name "DepthOnly"
+            Tags{ "LightMode" = "DepthOnly" }
+            HLSLPROGRAM
+            #pragma vertex DepthOnlyPassVertex
+            #pragma fragment DepthOnlyPassFragment
+            #pragma multi_compile_instancing
+            #include "Assets/ToyRenderPipeline/ShaderLibrary/DepthOnlyPass.hlsl"
             ENDHLSL
         }
     }

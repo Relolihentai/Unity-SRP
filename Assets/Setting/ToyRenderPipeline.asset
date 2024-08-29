@@ -12,3 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2ac6bd147136e9743849076adb7b246f, type: 3}
   m_Name: ToyRenderPipeline
   m_EditorClassIdentifier: 
+  renderPipelineData:
+    ScreenResolution: {x: 1920, y: 1080}

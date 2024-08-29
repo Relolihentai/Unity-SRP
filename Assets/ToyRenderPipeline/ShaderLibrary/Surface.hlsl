@@ -8,6 +8,7 @@ struct Surface
     float4 color;
     float3 worldNormal;
     float3 worldPos;
+    float depthLinear;
     float metallic;
     float roughness;
 };

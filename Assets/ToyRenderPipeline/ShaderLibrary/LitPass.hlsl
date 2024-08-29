@@ -1,5 +1,5 @@
-#ifndef TOY_LITPASS_INCLUDE
-#define TOY_LITPASS_INCLUDE
+#ifndef TOY_LIT_PASS_INCLUDE
+#define TOY_LIT_PASS_INCLUDE
 
 #include "Lighting.hlsl"
 
@@ -43,20 +43,21 @@ float4 LitPassFragment (LitPassVaryings i, out float depthout : SV_Depth) : SV_T
     float metallic = gt2.w;
     float rawDepth = SAMPLE_DEPTH_TEXTURE(_GDepth, sampler_GDepth, i.uv);
     depthout = rawDepth;
-    float depth = Linear01Depth(rawDepth, _ZBufferParams);
+    float depthLinear = Linear01Depth(rawDepth, _ZBufferParams);
 
     //这里就是NDC坐标
     float4 ndcPos = float4(i.uv * 2 - 1, rawDepth, 1);
     float far = _ProjectionParams.z;
     float3 clipVec = float3(ndcPos.x, ndcPos.y, 1.0) * far;
     float3 viewVec = mul(Toy_MatrixInvP, clipVec.xyzz).xyz;
-    float3 viewPos = viewVec * depth;
+    float3 viewPos = viewVec * depthLinear;
     float3 worldPos = mul(Toy_MatrixInvV, float4(viewPos, 1.0)).xyz;
     
     Surface surface;
     surface.color = color;
     surface.worldNormal = worldNormal;
     surface.worldPos = worldPos;
+    surface.depthLinear = depthLinear;
     surface.metallic = metallic;
     surface.roughness = roughness;
 
