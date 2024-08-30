@@ -14,3 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   renderPipelineData:
     ScreenResolution: {x: 1920, y: 1080}
+    CsmSettings:
+      shadowMapResolution: 2048
+      splits:
+      - 0.01
+      - 0.08
+      - 0.1
+      - 0.25

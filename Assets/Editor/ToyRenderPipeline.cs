@@ -14,7 +14,7 @@ public class ToyRenderPipeline : RenderPipeline
     private Lighting lighting;
     private CommandBuffer cmd;
 
-    public int shadowMapResolution = 1024;
+    
     private CSM csm;
     private RenderTexture[] csmShadowTextures = new RenderTexture[4];
     public ToyRenderPipeline()
@@ -38,10 +38,11 @@ public class ToyRenderPipeline : RenderPipeline
 
         for (int i = 0; i < 4; i++)
         {
-            csmShadowTextures[i] = new RenderTexture(shadowMapResolution, shadowMapResolution, 24,
-                RenderTextureFormat.Depth, RenderTextureReadWrite.Linear);
+            csmShadowTextures[i] = new RenderTexture(ToyRenderPipelineAsset.instance.renderPipelineData.CsmSettings.shadowMapResolution,
+                                                    ToyRenderPipelineAsset.instance.renderPipelineData.CsmSettings.shadowMapResolution, 24,
+                                                         RenderTextureFormat.Depth, RenderTextureReadWrite.Linear);
         }
-        csm = new CSM();
+        csm = new CSM(ToyRenderPipelineAsset.instance.renderPipelineData.CsmSettings);
         
         GraphicsSettings.useScriptableRenderPipelineBatching = true;
     }
@@ -53,6 +54,7 @@ public class ToyRenderPipeline : RenderPipeline
             Debug.Log("Screen Width : " + Screen.width + "Screen Height : " + Screen.height);
             
             //这里放在最开始，是因为后面要走Deferred，要重新设置渲染目标GT0123
+            context.SetupCameraProperties(camera);
             DrawShadowPass(context, camera);
             cmd.Clear();
             cmd.SetRenderTarget(gBufferID, gDepth);
@@ -98,8 +100,9 @@ public class ToyRenderPipeline : RenderPipeline
         for (int level = 0; level < 4; level++)
         {
             cmd.SetGlobalTexture("_ShadowMap_" + level, csmShadowTextures[level]);
-            cmd.SetGlobalFloat("_CSM_Split_" + level, csm.splts[level]);
-            csm.ConfigCameraToShadowSpace(ref camera, lightDir, level, 500.0f);
+            cmd.SetGlobalFloat("_CSM_Split_" + level, csm.csm_settings.splits[level]);
+            
+            csm.ConfigCameraToShadowSpace(ref camera, lightDir, level);
             Matrix4x4 v = camera.worldToCameraMatrix;
             Matrix4x4 p = GL.GetGPUProjectionMatrix(camera.projectionMatrix, false);
             cmd.SetGlobalMatrix("Toy_ShadowMatrixVP_" + level, p * v);

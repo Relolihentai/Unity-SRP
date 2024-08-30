@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Numerics;
@@ -15,9 +16,16 @@ struct MainCameraSettings
     public float farClipPlane;
     public float aspect;
 };
+
+[Serializable]
+public struct CSM_Settings
+{
+    public int shadowMapResolution;
+    public List<float> splits;
+}
 public class CSM
 {
-    public float[] splts = { 0.07f, 0.13f, 0.25f, 0.55f };
+    //public float[] splts = { 0.07f, 0.13f, 0.25f, 0.55f };
     //主相机视锥体
     private Vector3[] farCorners = new Vector3[4];
     private Vector3[] nearCorners = new Vector3[4];
@@ -32,7 +40,12 @@ public class CSM
     private Vector3[] box2 = new Vector3[8];
     private Vector3[] box3 = new Vector3[8];
     
-    MainCameraSettings settings;
+    private MainCameraSettings settings;
+    public CSM_Settings csm_settings;
+    public CSM(CSM_Settings settings)
+    {
+        csm_settings = settings;
+    }
     //Update更新分割视锥体
     public void Update(Camera camera, Vector3 lightDir)
     {
@@ -57,16 +70,16 @@ public class CSM
             Vector3 dir = farCorners[i] - nearCorners[i];
 
             f0_near[i] = nearCorners[i];
-            f0_far[i] = f0_near[i] + dir * splts[0];
+            f0_far[i] = f0_near[i] + dir * csm_settings.splits[0];
 
             f1_near[i] = f0_far[i];
-            f1_far[i] = f1_near[i] + dir * splts[1];
+            f1_far[i] = f1_near[i] + dir * csm_settings.splits[1];
 
             f2_near[i] = f1_far[i];
-            f2_far[i] = f2_near[i] + dir * splts[2];
+            f2_far[i] = f2_near[i] + dir * csm_settings.splits[2];
 
             f3_near[i] = f2_far[i];
-            f3_far[i] = f3_near[i] + dir * splts[3];
+            f3_far[i] = f3_near[i] + dir * csm_settings.splits[3];
         }
 
         // 计算包围盒
@@ -138,25 +151,67 @@ public class CSM
         return points;
     }
     
-    public void ConfigCameraToShadowSpace(ref Camera camera, Vector3 lightDir, int level, float distance)
+    public void ConfigCameraToShadowSpace(ref Camera camera, Vector3 lightDir, int level)
     {
         // 选择第 level 级视锥划分
         var box = new Vector3[8];
-        if(level == 0) box = box0; if(level == 1) box = box1; 
-        if(level == 2) box = box2; if(level == 3) box = box3;
-
+        var f_near = new Vector3[4];
+        var f_far = new Vector3[4];
+        if (level == 0)
+        {
+            box = box0;
+            f_near = f0_near;
+            f_far = f0_far;
+        }
+        if (level == 1)
+        {
+            box = box1;
+            f_near = f1_near;
+            f_far = f1_far;
+        }
+        if (level == 2)
+        {
+            box = box2; 
+            f_near = f2_near;
+            f_far = f2_far;
+        }
+        if (level == 3)
+        {
+            box = box3;
+            f_near = f3_near;
+            f_far = f3_far;
+        }
+        
         // 计算 Box 中点, 宽高比
-        Vector3 center = (box[3] + box[4]) / 2; 
-        float w = Vector3.Magnitude(box[0] - box[4]);
-        float h = Vector3.Magnitude(box[0] - box[2]);
+        Vector3 center = (box[2] + box[4]) / 2;
+        // 取box的宽高里长的那条作为深度图的边长
+        // float w = Vector3.Magnitude(box[0] - box[4]);
+        // float h = Vector3.Magnitude(box[0] - box[2]);
+        //float len = Mathf.Max(w, h);
+        // 造成旋转抖动的原因是摄像机旋转时，边长一直在变
+        // 然后我们取长的对角线作为边长，这样只要摄像机参数和split不变就不会变
+        float len = Mathf.Max(Vector3.Magnitude(f_far[2] - f_near[0]), Vector3.Magnitude(f_far[2] - f_far[0]));
+        
+        // 通过分辨率算出每像素的大小
+        float disPerPix = len / csm_settings.shadowMapResolution;
 
+        Matrix4x4 toShadowViewInv = Matrix4x4.LookAt(Vector3.zero, lightDir, Vector3.up);
+        Matrix4x4 toShadowView = toShadowViewInv.inverse;
+
+        center = mulMatrix(toShadowView, center, 1.0f);
+        for (int i = 0; i < 3; i++)
+            //center的位置对齐像素大小
+            center[i] = Mathf.Floor(center[i] / disPerPix) * disPerPix;
+        center = mulMatrix(toShadowViewInv, center, 1.0f);
+        
+        float distance = Vector3.Magnitude(box[0] - box[1]);
         // 配置相机
         camera.transform.rotation = Quaternion.LookRotation(lightDir);
-        camera.transform.position = center; 
-        camera.nearClipPlane = -distance;
+        camera.transform.position = center;
+        camera.nearClipPlane = 0;
         camera.farClipPlane = distance;
-        camera.aspect = w / h;
-        camera.orthographicSize = h * 0.5f;
+        camera.aspect = 1.0f;
+        camera.orthographicSize = len * 0.5f;
     }
     
     // 保存相机参数, 更改为正交投影

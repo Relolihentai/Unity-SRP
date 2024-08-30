@@ -8,6 +8,7 @@ using UnityEngine.Rendering;
 public struct ToyRenderPipelineData
 {
     public Vector2Int ScreenResolution;
+    public CSM_Settings CsmSettings;
 }
 
 [CreateAssetMenu(menuName = "RenderPipeline/ToyRenderPipeline")]
