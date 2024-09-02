@@ -4,6 +4,31 @@ using UnityEngine;
 
 public static class ComputeSphere
 {
+    public static void CSM_Only_ComputeSphereIntersection(Vector2 farPoint, Vector2 nearPoint, float radius, out Vector2 sphereCenter)
+    {
+        sphereCenter = Vector2.zero;
+        float l1 = Mathf.Abs(farPoint.x);
+        float offset_1 = Mathf.Pow(Mathf.Pow(radius, 2) - Mathf.Pow(l1, 2), 0.5f);
+        float center_0 = farPoint.y - offset_1;
+        float center_1 = farPoint.y + offset_1;
+
+        float l2 = Mathf.Abs(nearPoint.x);
+        float offset_2 = Mathf.Pow(Mathf.Pow(radius, 2) - Mathf.Pow(l2, 2), 0.5f);
+        float center_2 = nearPoint.y - offset_2;
+        float center_3 = nearPoint.y + offset_2;
+        
+        // Debug.Log("farPoint : " + farPoint);
+        // Debug.Log("nearPoint : " + nearPoint);
+        // Debug.Log("center_0 : " + center_0);
+        // Debug.Log("center_1 : " + center_1);
+        // Debug.Log("center_2 : " + center_2);
+        // Debug.Log("center_3 : " + center_3);
+
+        if (Mathf.Abs(center_0 - center_2) < 1e-1f) sphereCenter = new Vector2(0, center_0);
+        else if (Mathf.Abs(center_0 - center_3) < 1e-1f) sphereCenter = new Vector2(0, center_0);
+        else if (Mathf.Abs(center_1 - center_2) < 1e-1f) sphereCenter = new Vector2(0, center_1);
+        else if (Mathf.Abs(center_1 - center_3) < 1e-1f) sphereCenter = new Vector2(0, center_1);
+    }
     public static void ComputeSphereIntersection(Vector2 point_1, Vector2 point_2, float radius, out Vector2 intersection_1, out Vector2 intersection_2)
     {
         float Xa = point_1.x, Ya = point_1.y;

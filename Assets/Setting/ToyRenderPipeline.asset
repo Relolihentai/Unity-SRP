@@ -17,7 +17,7 @@ MonoBehaviour:
     CsmSettings:
       shadowMapResolution: 2048
       splits:
-      - 0.01
-      - 0.08
-      - 0.1
-      - 0.25
+      - 0.05
+      - 0.2
+      - 0.45
+      - 0.7

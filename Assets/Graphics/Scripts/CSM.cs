@@ -22,7 +22,7 @@ struct MainCameraSettings
 public struct CSM_Settings
 {
     public int shadowMapResolution;
-    public List<float> splits;
+    [Range(0.01f, 1)]public List<float> splits;
 }
 public class CSM
 {
@@ -85,25 +85,47 @@ public class CSM
 
         // 计算包围盒
         box0 = LightSpaceAABB(f0_near, f0_far, lightDir);
-        if (camera.cameraType == CameraType.Game)
+        box1 = LightSpaceAABB(f1_near, f1_far, lightDir);
+        box2 = LightSpaceAABB(f2_near, f2_far, lightDir);
+        box3 = LightSpaceAABB(f3_near, f3_far, lightDir);
+
+        Vector3 cameraPosition = camera.transform.position;
+        for (int i = 0; i < 4; i++)
         {
+            f0_near[i] = camera.transform.TransformVector(f0_near[i]) + cameraPosition;
+            f0_far[i] = camera.transform.TransformVector(f0_far[i]) + cameraPosition;
+            f1_near[i] = camera.transform.TransformVector(f1_near[i]) + cameraPosition;
+            f1_far[i] = camera.transform.TransformVector(f1_far[i]) + cameraPosition;
+            f2_near[i] = camera.transform.TransformVector(f2_near[i]) + cameraPosition;
+            f2_far[i] = camera.transform.TransformVector(f2_far[i]) + cameraPosition;
+            f3_near[i] = camera.transform.TransformVector(f3_near[i]) + cameraPosition;
+            f3_far[i] = camera.transform.TransformVector(f3_far[i]) + cameraPosition;
+        }
+        
+        for (int i = 0; i < 8; i++)
+        {
+            box0[i] = camera.transform.TransformVector(box0[i]) + cameraPosition;
+            box1[i] = camera.transform.TransformVector(box1[i]) + cameraPosition;
+            box2[i] = camera.transform.TransformVector(box2[i]) + cameraPosition;
+            box3[i] = camera.transform.TransformVector(box3[i]) + cameraPosition;
+        }
+        if (camera.cameraType == CameraType.Preview)
+        {
+            //Debug.Log("center : " + (box0[0] + box0[7]) / 2);
             DrawFrustum(f0_near, f0_far, Color.blue);
             DrawAABB(box0, Color.blue);
         }
-        box1 = LightSpaceAABB(f1_near, f1_far, lightDir);
-        if (camera.cameraType == CameraType.Game)
+        if (camera.cameraType == CameraType.Preview)
         {
             DrawFrustum(f1_near, f1_far, Color.red);
             DrawAABB(box1, Color.red);
         }
-        box2 = LightSpaceAABB(f2_near, f2_far, lightDir);
-        if (camera.cameraType == CameraType.Game)
+        if (camera.cameraType == CameraType.Preview)
         {
             DrawFrustum(f2_near, f2_far, Color.green);
             DrawAABB(box2, Color.green);
         }
-        box3 = LightSpaceAABB(f3_near, f3_far, lightDir);
-        if (camera.cameraType == CameraType.Game)
+        if (camera.cameraType == CameraType.Preview)
         {
             DrawFrustum(f3_near, f3_far, Color.yellow);
             DrawAABB(box3, Color.yellow);
@@ -122,7 +144,7 @@ public class CSM
         //这里LookAt计算的是world to light 的转置
         // Matrix4x4 toShadowViewInv = Matrix4x4.LookAt(Vector3.zero, lightDir, Vector3.up);
         // Matrix4x4 toShadowView = toShadowViewInv.inverse;
-
+        
         // 视锥体顶点转光源方向
         // for(int i = 0; i < 4; i++)
         // {
@@ -135,31 +157,22 @@ public class CSM
         Vector2 nearPoint_1 = (new Vector2(nearCorners[0].x, nearCorners[0].z) + new Vector2(nearCorners[1].x, nearCorners[1].z)) / 2;
         Vector2 nearPoint_2 = (new Vector2(nearCorners[2].x, nearCorners[2].z) + new Vector2(nearCorners[3].x, nearCorners[3].z)) / 2;
         
-        Debug.Log("farPoint 1 : " + farPoint_1);
-        Debug.Log("farPoint 2 : " + farPoint_2);
-        Debug.Log("nearPoint 1 : " + nearPoint_1);
-        Debug.Log("nearPoint 2 : " + nearPoint_2);
-        // r = (a + b + c + d) / 2 / pi
-        float raidus = Vector2.Distance(farPoint_1, farPoint_2) + Vector2.Distance(farPoint_1, nearPoint_1) +
-                       Vector2.Distance(nearPoint_1, nearPoint_2) + Vector2.Distance(farPoint_2, nearPoint_2) / 2.0f / Mathf.PI;
+        // s = (a + b + c + d) / 2
+        // A = ((s - a)(s - b)(s - c)(s - d))^0.5
+        // R = ((ac + bd)(ad + bc)(ab + cd))^0.5 / 4 / A
+        float a = Vector2.Distance(farPoint_1, farPoint_2),
+            b = Vector2.Distance(farPoint_1, nearPoint_1),
+            c = Vector2.Distance(nearPoint_1, nearPoint_2),
+            d = Vector2.Distance(farPoint_2, nearPoint_2);
+        float s = (a + b + c + d) / 2;
+        float A = Mathf.Pow((s - a) * (s - d) * (s - c) * (s - d), 0.5f);
+        float raidus = Mathf.Pow((a * c + b * d) * (a * d + b * c) * (a * b + c * d), 0.5f) / 4 / A;
         
-        Debug.Log("radius : " + raidus);
+        // Debug.Log(raidus);
         
-        Vector2 sphereCenter_0, sphereCenter_1, sphereCenter_2, sphereCenter_3;
         Vector2 sphereCenter = Vector2.zero;
-        ComputeSphere.ComputeSphereIntersection(farPoint_1, farPoint_2, raidus, out sphereCenter_0, out sphereCenter_1);
-        ComputeSphere.ComputeSphereIntersection(nearPoint_1, nearPoint_2, raidus, out sphereCenter_2, out sphereCenter_3);
-
-        if (sphereCenter_0 == sphereCenter_2) sphereCenter = sphereCenter_0;
-        else if (sphereCenter_0 == sphereCenter_3) sphereCenter = sphereCenter_0;
-        else if (sphereCenter_1 == sphereCenter_2) sphereCenter = sphereCenter_1;
-        else if (sphereCenter_1 == sphereCenter_3) sphereCenter = sphereCenter_1;
-        
-        Debug.Log("sphereCenter 0 : " + sphereCenter_0);
-        Debug.Log("sphereCenter 1 : " + sphereCenter_1);
-        Debug.Log("sphereCenter 2 : " + sphereCenter_2);
-        Debug.Log("sphereCenter 3 : " + sphereCenter_3);
-        
+        ComputeSphere.CSM_Only_ComputeSphereIntersection(farPoint_1, nearPoint_1, raidus, out sphereCenter);
+        Vector3 sphereCenter_V3 = new Vector3(sphereCenter.x, 0, sphereCenter.y);
         Vector3[] points =
         {
             new Vector3(sphereCenter.x - raidus, -raidus, sphereCenter.y - raidus), new Vector3(sphereCenter.x - raidus, -raidus, sphereCenter.y + raidus),
@@ -167,8 +180,10 @@ public class CSM
             new Vector3(sphereCenter.x + raidus, -raidus, sphereCenter.y - raidus), new Vector3(sphereCenter.x + raidus, -raidus, sphereCenter.y + raidus),
             new Vector3(sphereCenter.x + raidus, raidus, sphereCenter.y - raidus), new Vector3(sphereCenter.x + raidus, raidus, sphereCenter.y + raidus)
         };
-        DrawAABB(points, Color.cyan);
-        
+        for (int i = 0; i < 8; i++)
+        {
+            points[i] = mulMatrix(toLightView, points[i] - sphereCenter_V3, 1) + sphereCenter_V3;
+        }
         //好处就是在光源空间下，计算AABB盒很方便，只需要取xyz三轴的最大最小值，然后组装
         // 计算 AABB 包围盒
         // float[] x = new float[8];
@@ -190,18 +205,16 @@ public class CSM
         //     new Vector3(xmax, ymin, zmin), new Vector3(xmax, ymin, zmax), new Vector3(xmax, ymax, zmin), new Vector3(xmax, ymax, zmax)
         // };
         
-        //乘以逆矩阵回去
-        for(int i = 0; i < 8; i++)
-            points[i] = mulMatrix(toLightViewInv, points[i], 1.0f);
-        // 视锥体顶还原
-        for(int i = 0; i < 4; i++)
-        {
-            farCorners[i] = mulMatrix(toLightViewInv, farCorners[i], 1.0f);
-            nearCorners[i] = mulMatrix(toLightViewInv, nearCorners[i], 1.0f);
-        }
+        // //乘以逆矩阵回去
+        // for(int i = 0; i < 8; i++)
+        //     points[i] = mulMatrix(toLightViewInv, points[i], 1.0f);
+        // // 视锥体顶还原
+        // for(int i = 0; i < 4; i++)
+        // {
+        //     farCorners[i] = mulMatrix(toLightViewInv, farCorners[i], 1.0f);
+        //     nearCorners[i] = mulMatrix(toLightViewInv, nearCorners[i], 1.0f);
+        // }
         
-        
-
         return points;
     }
     
@@ -209,63 +222,66 @@ public class CSM
     {
         // 选择第 level 级视锥划分
         var box = new Vector3[8];
-        var f_near = new Vector3[4];
-        var f_far = new Vector3[4];
+        // var f_near = new Vector3[4];
+        // var f_far = new Vector3[4];
         if (level == 0)
         {
             box = box0;
-            f_near = f0_near;
-            f_far = f0_far;
+            // f_near = f0_near;
+            // f_far = f0_far;
         }
         if (level == 1)
         {
             box = box1;
-            f_near = f1_near;
-            f_far = f1_far;
+            // f_near = f1_near;
+            // f_far = f1_far;
         }
         if (level == 2)
         {
             box = box2; 
-            f_near = f2_near;
-            f_far = f2_far;
+            // f_near = f2_near;
+            // f_far = f2_far;
         }
         if (level == 3)
         {
             box = box3;
-            f_near = f3_near;
-            f_far = f3_far;
+            // f_near = f3_near;
+            // f_far = f3_far;
         }
         
-        // 计算 Box 中点, 宽高比
-        Vector3 center = (box[2] + box[4]) / 2;
+        // 计算 Box 后面的 中点, 宽高比
+        //Vector3 center = (box[2] + box[4]) / 2;
+        
+        //box 几何中心
+        Vector3 center = (box[0] + box[7]) / 2;
         // 取box的宽高里长的那条作为深度图的边长
         // float w = Vector3.Magnitude(box[0] - box[4]);
         // float h = Vector3.Magnitude(box[0] - box[2]);
         //float len = Mathf.Max(w, h);
         // 造成旋转抖动的原因是摄像机旋转时，边长一直在变
         // 然后我们取长的对角线作为边长，这样只要摄像机参数和split不变就不会变
-        float len = Mathf.Max(Vector3.Magnitude(f_far[2] - f_near[0]), Vector3.Magnitude(f_far[2] - f_far[0]));
+        //float len = Mathf.Max(Vector3.Magnitude(f_far[2] - f_near[0]), Vector3.Magnitude(f_far[2] - f_far[0]));
         
         // 通过分辨率算出每像素的大小
-        float disPerPix = len / csm_settings.shadowMapResolution;
+        //float disPerPix = len / csm_settings.shadowMapResolution;
 
-        Matrix4x4 toShadowViewInv = Matrix4x4.LookAt(Vector3.zero, lightDir, Vector3.up);
-        Matrix4x4 toShadowView = toShadowViewInv.inverse;
+        // Matrix4x4 toShadowViewInv = Matrix4x4.LookAt(Vector3.zero, lightDir, Vector3.up);
+        // Matrix4x4 toShadowView = toShadowViewInv.inverse;
 
-        center = mulMatrix(toShadowView, center, 1.0f);
-        for (int i = 0; i < 3; i++)
-            //center的位置对齐像素大小
-            center[i] = Mathf.Floor(center[i] / disPerPix) * disPerPix;
-        center = mulMatrix(toShadowViewInv, center, 1.0f);
+        //center = mulMatrix(toShadowView, center, 1.0f);
+        // for (int i = 0; i < 3; i++)
+        //     //center的位置对齐像素大小
+        //     center[i] = Mathf.Floor(center[i] / disPerPix) * disPerPix;
+        //center = mulMatrix(toShadowViewInv, center, 1.0f);
         
         float distance = Vector3.Magnitude(box[0] - box[1]);
         // 配置相机
         camera.transform.rotation = Quaternion.LookRotation(lightDir);
         camera.transform.position = center;
-        camera.nearClipPlane = 0;
-        camera.farClipPlane = distance;
+        camera.nearClipPlane = -distance / 2;
+        camera.farClipPlane = distance / 2;
         camera.aspect = 1.0f;
-        camera.orthographicSize = len * 0.5f;
+        camera.orthographicSize = distance / 2;
     }
     
     // 保存相机参数, 更改为正交投影
