@@ -7,6 +7,7 @@ using Matrix4x4 = UnityEngine.Matrix4x4;
 using Vector3 = UnityEngine.Vector3;
 using Vector4 = UnityEngine.Vector4;
 using Quaternion = UnityEngine.Quaternion;
+using Vector2 = UnityEngine.Vector2;
 
 struct MainCameraSettings
 {
@@ -54,15 +55,15 @@ public class CSM
         camera.CalculateFrustumCorners(new Rect(0, 0, 1, 1), camera.farClipPlane, Camera.MonoOrStereoscopicEye.Mono, farCorners);
         camera.CalculateFrustumCorners(new Rect(0, 0, 1, 1), camera.nearClipPlane, Camera.MonoOrStereoscopicEye.Mono, nearCorners);
         
-        // 视锥体顶点转世界坐标
-        for (int i = 0; i < 4; i++)
-        {
-            //TransformVector，将vector从该transform的本地空间变换到世界空间
-            //原理应该很简单，取transform三轴在世界空间的表示，组成列矩阵，然后转置
-            //别忘了平移矩阵，就是position
-            farCorners[i] = camera.transform.TransformVector(farCorners[i]) + camera.transform.position;
-            nearCorners[i] = camera.transform.TransformVector(nearCorners[i]) + camera.transform.position;
-        }
+        // // 视锥体顶点转世界坐标
+        // for (int i = 0; i < 4; i++)
+        // {
+        //     //TransformVector，将vector从该transform的本地空间变换到世界空间
+        //     //原理应该很简单，取transform三轴在世界空间的表示，组成列矩阵，然后转置
+        //     //别忘了平移矩阵，就是position
+        //     farCorners[i] = camera.transform.TransformVector(farCorners[i]) + camera.transform.position;
+        //     nearCorners[i] = camera.transform.TransformVector(nearCorners[i]) + camera.transform.position;
+        // }
 
         // 按照比例划分相机视锥体
         for(int i = 0; i < 4; i++)
@@ -84,69 +85,122 @@ public class CSM
 
         // 计算包围盒
         box0 = LightSpaceAABB(f0_near, f0_far, lightDir);
-        // DrawFrustum(f0_near, f0_far, Color.blue);
-        // DrawAABB(box0, Color.blue);
+        if (camera.cameraType == CameraType.Game)
+        {
+            DrawFrustum(f0_near, f0_far, Color.blue);
+            DrawAABB(box0, Color.blue);
+        }
         box1 = LightSpaceAABB(f1_near, f1_far, lightDir);
-        // DrawFrustum(f1_near, f1_far, Color.red);
-        // DrawAABB(box1, Color.red);
+        if (camera.cameraType == CameraType.Game)
+        {
+            DrawFrustum(f1_near, f1_far, Color.red);
+            DrawAABB(box1, Color.red);
+        }
         box2 = LightSpaceAABB(f2_near, f2_far, lightDir);
-        // DrawFrustum(f2_near, f2_far, Color.green);
-        // DrawAABB(box2, Color.green);
+        if (camera.cameraType == CameraType.Game)
+        {
+            DrawFrustum(f2_near, f2_far, Color.green);
+            DrawAABB(box2, Color.green);
+        }
         box3 = LightSpaceAABB(f3_near, f3_far, lightDir);
-        // DrawFrustum(f3_near, f3_far, Color.yellow);
-        // DrawAABB(box3, Color.yellow);
+        if (camera.cameraType == CameraType.Game)
+        {
+            DrawFrustum(f3_near, f3_far, Color.yellow);
+            DrawAABB(box3, Color.yellow);
+        }
     }
     
     Vector3[] LightSpaceAABB(Vector3[] nearCorners, Vector3[] farCorners, Vector3 lightDir)
     {
         //这里就是想让世界空间下的视椎体顶点变换到光源空间，旋转和光源一样
         //手动组装矩阵的方法
-        // Vector3 lightRight = Vector3.Cross(Vector3.up, lightDir);
-        // Vector3 lightUp = Vector3.Cross(lightDir, lightRight);
-        // Matrix4x4 toLightView = new Matrix4x4(lightRight, lightUp, lightDir, new Vector4(0, 0, 0, 1));
+        Vector3 lightRight = Vector3.Cross(Vector3.up, lightDir);
+        Vector3 lightUp = Vector3.Cross(lightDir, lightRight);
+        Matrix4x4 toLightView = new Matrix4x4(lightRight, lightUp, lightDir, new Vector4(0, 0, 0, 1));
+        Matrix4x4 toLightViewInv = toLightView.inverse;
         
         //这里LookAt计算的是world to light 的转置
-        Matrix4x4 toShadowViewInv = Matrix4x4.LookAt(Vector3.zero, lightDir, Vector3.up);
-        Matrix4x4 toShadowView = toShadowViewInv.inverse;
+        // Matrix4x4 toShadowViewInv = Matrix4x4.LookAt(Vector3.zero, lightDir, Vector3.up);
+        // Matrix4x4 toShadowView = toShadowViewInv.inverse;
 
         // 视锥体顶点转光源方向
-        for(int i = 0; i < 4; i++)
-        {
-            farCorners[i] = mulMatrix(toShadowView, farCorners[i], 1.0f);
-            nearCorners[i] = mulMatrix(toShadowView, nearCorners[i], 1.0f);
-        }
+        // for(int i = 0; i < 4; i++)
+        // {
+        //     farCorners[i] = mulMatrix(toLightView, farCorners[i], 1.0f);
+        //     nearCorners[i] = mulMatrix(toLightView, nearCorners[i], 1.0f);
+        // }
 
+        Vector2 farPoint_1 = (new Vector2(farCorners[0].x, farCorners[0].z) + new Vector2(farCorners[1].x, farCorners[1].z)) / 2;
+        Vector2 farPoint_2 = (new Vector2(farCorners[2].x, farCorners[2].z) + new Vector2(farCorners[3].x, farCorners[3].z)) / 2;
+        Vector2 nearPoint_1 = (new Vector2(nearCorners[0].x, nearCorners[0].z) + new Vector2(nearCorners[1].x, nearCorners[1].z)) / 2;
+        Vector2 nearPoint_2 = (new Vector2(nearCorners[2].x, nearCorners[2].z) + new Vector2(nearCorners[3].x, nearCorners[3].z)) / 2;
+        
+        Debug.Log("farPoint 1 : " + farPoint_1);
+        Debug.Log("farPoint 2 : " + farPoint_2);
+        Debug.Log("nearPoint 1 : " + nearPoint_1);
+        Debug.Log("nearPoint 2 : " + nearPoint_2);
+        // r = (a + b + c + d) / 2 / pi
+        float raidus = Vector2.Distance(farPoint_1, farPoint_2) + Vector2.Distance(farPoint_1, nearPoint_1) +
+                       Vector2.Distance(nearPoint_1, nearPoint_2) + Vector2.Distance(farPoint_2, nearPoint_2) / 2.0f / Mathf.PI;
+        
+        Debug.Log("radius : " + raidus);
+        
+        Vector2 sphereCenter_0, sphereCenter_1, sphereCenter_2, sphereCenter_3;
+        Vector2 sphereCenter = Vector2.zero;
+        ComputeSphere.ComputeSphereIntersection(farPoint_1, farPoint_2, raidus, out sphereCenter_0, out sphereCenter_1);
+        ComputeSphere.ComputeSphereIntersection(nearPoint_1, nearPoint_2, raidus, out sphereCenter_2, out sphereCenter_3);
+
+        if (sphereCenter_0 == sphereCenter_2) sphereCenter = sphereCenter_0;
+        else if (sphereCenter_0 == sphereCenter_3) sphereCenter = sphereCenter_0;
+        else if (sphereCenter_1 == sphereCenter_2) sphereCenter = sphereCenter_1;
+        else if (sphereCenter_1 == sphereCenter_3) sphereCenter = sphereCenter_1;
+        
+        Debug.Log("sphereCenter 0 : " + sphereCenter_0);
+        Debug.Log("sphereCenter 1 : " + sphereCenter_1);
+        Debug.Log("sphereCenter 2 : " + sphereCenter_2);
+        Debug.Log("sphereCenter 3 : " + sphereCenter_3);
+        
+        Vector3[] points =
+        {
+            new Vector3(sphereCenter.x - raidus, -raidus, sphereCenter.y - raidus), new Vector3(sphereCenter.x - raidus, -raidus, sphereCenter.y + raidus),
+            new Vector3(sphereCenter.x - raidus, raidus, sphereCenter.y - raidus), new Vector3(sphereCenter.x - raidus, raidus, sphereCenter.y + raidus),
+            new Vector3(sphereCenter.x + raidus, -raidus, sphereCenter.y - raidus), new Vector3(sphereCenter.x + raidus, -raidus, sphereCenter.y + raidus),
+            new Vector3(sphereCenter.x + raidus, raidus, sphereCenter.y - raidus), new Vector3(sphereCenter.x + raidus, raidus, sphereCenter.y + raidus)
+        };
+        DrawAABB(points, Color.cyan);
+        
         //好处就是在光源空间下，计算AABB盒很方便，只需要取xyz三轴的最大最小值，然后组装
         // 计算 AABB 包围盒
-        float[] x = new float[8];
-        float[] y = new float[8];
-        float[] z = new float[8];
-        for(int i = 0; i < 4; i++)
-        {
-            x[i] = nearCorners[i].x; x[i+4] = farCorners[i].x;
-            y[i] = nearCorners[i].y; y[i+4] = farCorners[i].y;
-            z[i] = nearCorners[i].z; z[i+4] = farCorners[i].z;
-        }
-        float xmin=Mathf.Min(x), xmax=Mathf.Max(x);
-        float ymin=Mathf.Min(y), ymax=Mathf.Max(y);
-        float zmin=Mathf.Min(z), zmax=Mathf.Max(z);
-
-        // 包围盒顶点转世界坐标
-        Vector3[] points = {
-            new Vector3(xmin, ymin, zmin), new Vector3(xmin, ymin, zmax), new Vector3(xmin, ymax, zmin), new Vector3(xmin, ymax, zmax),
-            new Vector3(xmax, ymin, zmin), new Vector3(xmax, ymin, zmax), new Vector3(xmax, ymax, zmin), new Vector3(xmax, ymax, zmax)
-        };
+        // float[] x = new float[8];
+        // float[] y = new float[8];
+        // float[] z = new float[8];
+        // for(int i = 0; i < 4; i++)
+        // {
+        //     x[i] = nearCorners[i].x; x[i+4] = farCorners[i].x;
+        //     y[i] = nearCorners[i].y; y[i+4] = farCorners[i].y;
+        //     z[i] = nearCorners[i].z; z[i+4] = farCorners[i].z;
+        // }
+        // float xmin=Mathf.Min(x), xmax=Mathf.Max(x);
+        // float ymin=Mathf.Min(y), ymax=Mathf.Max(y);
+        // float zmin=Mathf.Min(z), zmax=Mathf.Max(z);
+        //
+        // // 包围盒顶点转世界坐标
+        // Vector3[] points = {
+        //     new Vector3(xmin, ymin, zmin), new Vector3(xmin, ymin, zmax), new Vector3(xmin, ymax, zmin), new Vector3(xmin, ymax, zmax),
+        //     new Vector3(xmax, ymin, zmin), new Vector3(xmax, ymin, zmax), new Vector3(xmax, ymax, zmin), new Vector3(xmax, ymax, zmax)
+        // };
         
         //乘以逆矩阵回去
         for(int i = 0; i < 8; i++)
-            points[i] = mulMatrix(toShadowViewInv, points[i], 1.0f);
-
+            points[i] = mulMatrix(toLightViewInv, points[i], 1.0f);
         // 视锥体顶还原
         for(int i = 0; i < 4; i++)
         {
-            farCorners[i] = mulMatrix(toShadowViewInv, farCorners[i], 1.0f);
-            nearCorners[i] = mulMatrix(toShadowViewInv, nearCorners[i], 1.0f);
+            farCorners[i] = mulMatrix(toLightViewInv, farCorners[i], 1.0f);
+            nearCorners[i] = mulMatrix(toLightViewInv, nearCorners[i], 1.0f);
         }
+        
+        
 
         return points;
     }

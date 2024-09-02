@@ -106,6 +106,8 @@ public class ToyRenderPipeline : RenderPipeline
             Matrix4x4 v = camera.worldToCameraMatrix;
             Matrix4x4 p = GL.GetGPUProjectionMatrix(camera.projectionMatrix, false);
             cmd.SetGlobalMatrix("Toy_ShadowMatrixVP_" + level, p * v);
+            cmd.SetGlobalFloat("_CSM_Radius_" + level, camera.farClipPlane / 2.0f);
+            cmd.SetGlobalVector("_CSM_SphereCenter_" + level, camera.transform.position);
             cmd.name = "shadowMap" + level;
             context.SetupCameraProperties(camera);
             cmd.SetRenderTarget(csmShadowTextures[level]);
