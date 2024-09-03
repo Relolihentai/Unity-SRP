@@ -13,7 +13,6 @@ public class ToyRenderPipeline : RenderPipeline
     private CameraRenderer cameraRenderer;
     private Lighting lighting;
     private CommandBuffer cmd;
-
     
     private CSM csm;
     private RenderTexture[] csmShadowTextures = new RenderTexture[4];
@@ -21,7 +20,7 @@ public class ToyRenderPipeline : RenderPipeline
     {
         cmd = new CommandBuffer();
         cmd.name = "GBuffer";
-
+        
         cameraRenderer = new CameraRenderer();
         lighting = new Lighting();
 
@@ -51,8 +50,6 @@ public class ToyRenderPipeline : RenderPipeline
     {
         foreach (var camera in cameras)
         {
-            Debug.Log("Screen Width : " + Screen.width + "Screen Height : " + Screen.height);
-            
             //这里放在最开始，是因为后面要走Deferred，要重新设置渲染目标GT0123
             context.SetupCameraProperties(camera);
             DrawShadowPass(context, camera);
@@ -97,6 +94,7 @@ public class ToyRenderPipeline : RenderPipeline
         Vector3 lightDir = light.transform.rotation * Vector3.forward;
         csm.Update(camera, lightDir);
         csm.SaveMainCameraSettings(ref camera);
+        cmd.SetGlobalFloat("_CSM_ShadowMapResolution", ToyRenderPipelineAsset.instance.renderPipelineData.CsmSettings.shadowMapResolution);
         for (int level = 0; level < 4; level++)
         {
             cmd.SetGlobalTexture("_ShadowMap_" + level, csmShadowTextures[level]);
@@ -123,6 +121,8 @@ public class ToyRenderPipeline : RenderPipeline
             DrawingSettings drawingSettings = new DrawingSettings(shaderTagId, sortingSettings);
             FilteringSettings filteringSettings = FilteringSettings.defaultValue;
             context.DrawRenderers(cullResults, ref drawingSettings, ref filteringSettings);
+            
+            
             context.Submit();
         }
         csm.RevertMainCameraSettings(ref camera);

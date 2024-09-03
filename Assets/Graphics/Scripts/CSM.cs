@@ -109,27 +109,26 @@ public class CSM
             box2[i] = camera.transform.TransformVector(box2[i]) + cameraPosition;
             box3[i] = camera.transform.TransformVector(box3[i]) + cameraPosition;
         }
-        if (camera.cameraType == CameraType.Preview)
-        {
-            //Debug.Log("center : " + (box0[0] + box0[7]) / 2);
-            DrawFrustum(f0_near, f0_far, Color.blue);
-            DrawAABB(box0, Color.blue);
-        }
-        if (camera.cameraType == CameraType.Preview)
-        {
-            DrawFrustum(f1_near, f1_far, Color.red);
-            DrawAABB(box1, Color.red);
-        }
-        if (camera.cameraType == CameraType.Preview)
-        {
-            DrawFrustum(f2_near, f2_far, Color.green);
-            DrawAABB(box2, Color.green);
-        }
-        if (camera.cameraType == CameraType.Preview)
-        {
-            DrawFrustum(f3_near, f3_far, Color.yellow);
-            DrawAABB(box3, Color.yellow);
-        }
+        // if (camera.cameraType == CameraType.Preview)
+        // {
+        //     DrawFrustum(f0_near, f0_far, Color.blue);
+        //     DrawAABB(box0, Color.blue);
+        // }
+        // if (camera.cameraType == CameraType.Preview)
+        // {
+        //     DrawFrustum(f1_near, f1_far, Color.red);
+        //     DrawAABB(box1, Color.red);
+        // }
+        // if (camera.cameraType == CameraType.Preview)
+        // {
+        //     DrawFrustum(f2_near, f2_far, Color.green);
+        //     DrawAABB(box2, Color.green);
+        // }
+        // if (camera.cameraType == CameraType.Preview)
+        // {
+        //     DrawFrustum(f3_near, f3_far, Color.yellow);
+        //     DrawAABB(box3, Color.yellow);
+        // }
     }
     
     Vector3[] LightSpaceAABB(Vector3[] nearCorners, Vector3[] farCorners, Vector3 lightDir)
