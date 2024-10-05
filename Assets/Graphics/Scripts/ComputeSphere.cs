@@ -4,6 +4,18 @@ using UnityEngine;
 
 public static class ComputeSphere
 {
+    public static void CSM_Only_ComputeSphereCenter(Vector3 oneFarPoint, Vector3 oneNearPoint, out Vector3 sphereCenter, out float radius)
+    {
+        sphereCenter = Vector3.zero;
+        float X0 = sphereCenter.x, Y0 = sphereCenter.y;
+        float Px1 = oneFarPoint.x, Py1 = oneFarPoint.y, Pz1 = oneFarPoint.z;
+        float Px2 = oneNearPoint.x, Py2 = oneNearPoint.y, Pz2 = oneNearPoint.z;
+        float E0 = (Px1 - Px2) * (Px1 + Px2 - 2 * X0) + (Py1 - Py2) * (Py1 + Py2 - 2 * Y0);
+        E0 /= Pz2 - Pz1;
+        float Z0 = (Pz1 + Pz2 - E0) / 2;
+        sphereCenter.z = Z0;
+        radius = Vector3.Distance(sphereCenter, oneFarPoint);
+    }
     public static void CSM_Only_ComputeSphereIntersection(Vector2 farPoint, Vector2 nearPoint, float radius, out Vector2 sphereCenter)
     {
         sphereCenter = Vector2.zero;

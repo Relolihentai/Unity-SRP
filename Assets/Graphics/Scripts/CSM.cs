@@ -82,13 +82,7 @@ public class CSM
             f3_near[i] = f2_far[i];
             f3_far[i] = f3_near[i] + dir * csm_settings.splits[3];
         }
-
-        // 计算包围盒
-        box0 = LightSpaceAABB(f0_near, f0_far, lightDir);
-        box1 = LightSpaceAABB(f1_near, f1_far, lightDir);
-        box2 = LightSpaceAABB(f2_near, f2_far, lightDir);
-        box3 = LightSpaceAABB(f3_near, f3_far, lightDir);
-
+        
         Vector3 cameraPosition = camera.transform.position;
         for (int i = 0; i < 4; i++)
         {
@@ -101,34 +95,33 @@ public class CSM
             f3_near[i] = camera.transform.TransformVector(f3_near[i]) + cameraPosition;
             f3_far[i] = camera.transform.TransformVector(f3_far[i]) + cameraPosition;
         }
+
+        // 计算包围盒
+        box0 = LightSpaceAABB(f0_near, f0_far, lightDir);
+        box1 = LightSpaceAABB(f1_near, f1_far, lightDir);
+        box2 = LightSpaceAABB(f2_near, f2_far, lightDir);
+        box3 = LightSpaceAABB(f3_near, f3_far, lightDir);
         
-        for (int i = 0; i < 8; i++)
+        if (camera.cameraType == CameraType.Preview)
         {
-            box0[i] = camera.transform.TransformVector(box0[i]) + cameraPosition;
-            box1[i] = camera.transform.TransformVector(box1[i]) + cameraPosition;
-            box2[i] = camera.transform.TransformVector(box2[i]) + cameraPosition;
-            box3[i] = camera.transform.TransformVector(box3[i]) + cameraPosition;
+            DrawFrustum(f0_near, f0_far, Color.blue);
+            DrawAABB(box0, Color.blue);
         }
-        // if (camera.cameraType == CameraType.Preview)
-        // {
-        //     DrawFrustum(f0_near, f0_far, Color.blue);
-        //     DrawAABB(box0, Color.blue);
-        // }
-        // if (camera.cameraType == CameraType.Preview)
-        // {
-        //     DrawFrustum(f1_near, f1_far, Color.red);
-        //     DrawAABB(box1, Color.red);
-        // }
-        // if (camera.cameraType == CameraType.Preview)
-        // {
-        //     DrawFrustum(f2_near, f2_far, Color.green);
-        //     DrawAABB(box2, Color.green);
-        // }
-        // if (camera.cameraType == CameraType.Preview)
-        // {
-        //     DrawFrustum(f3_near, f3_far, Color.yellow);
-        //     DrawAABB(box3, Color.yellow);
-        // }
+        if (camera.cameraType == CameraType.Preview)
+        {
+            DrawFrustum(f1_near, f1_far, Color.red);
+            DrawAABB(box1, Color.red);
+        }
+        if (camera.cameraType == CameraType.Preview)
+        {
+            DrawFrustum(f2_near, f2_far, Color.green);
+            DrawAABB(box2, Color.green);
+        }
+        if (camera.cameraType == CameraType.Preview)
+        {
+            DrawFrustum(f3_near, f3_far, Color.yellow);
+            DrawAABB(box3, Color.yellow);
+        }
     }
     
     Vector3[] LightSpaceAABB(Vector3[] nearCorners, Vector3[] farCorners, Vector3 lightDir)
@@ -137,82 +130,86 @@ public class CSM
         //手动组装矩阵的方法
         Vector3 lightRight = Vector3.Cross(Vector3.up, lightDir);
         Vector3 lightUp = Vector3.Cross(lightDir, lightRight);
-        Matrix4x4 toLightView = new Matrix4x4(lightRight, lightUp, lightDir, new Vector4(0, 0, 0, 1));
+        Matrix4x4 toLightView = new Matrix4x4(new Vector4(lightRight.x, lightRight.y, lightRight.z, 1),
+                                                new Vector4(lightUp.x, lightUp.y, lightUp.z, 1), 
+                                                new Vector4(lightDir.x, lightDir.y, lightDir.z, 1), 
+                                                new Vector4(0, 0, 0, 1));
         Matrix4x4 toLightViewInv = toLightView.inverse;
         
         //这里LookAt计算的是world to light 的转置
         // Matrix4x4 toShadowViewInv = Matrix4x4.LookAt(Vector3.zero, lightDir, Vector3.up);
         // Matrix4x4 toShadowView = toShadowViewInv.inverse;
-        
-        // 视锥体顶点转光源方向
-        // for(int i = 0; i < 4; i++)
-        // {
-        //     farCorners[i] = mulMatrix(toLightView, farCorners[i], 1.0f);
-        //     nearCorners[i] = mulMatrix(toLightView, nearCorners[i], 1.0f);
-        // }
 
-        Vector2 farPoint_1 = (new Vector2(farCorners[0].x, farCorners[0].z) + new Vector2(farCorners[1].x, farCorners[1].z)) / 2;
-        Vector2 farPoint_2 = (new Vector2(farCorners[2].x, farCorners[2].z) + new Vector2(farCorners[3].x, farCorners[3].z)) / 2;
-        Vector2 nearPoint_1 = (new Vector2(nearCorners[0].x, nearCorners[0].z) + new Vector2(nearCorners[1].x, nearCorners[1].z)) / 2;
-        Vector2 nearPoint_2 = (new Vector2(nearCorners[2].x, nearCorners[2].z) + new Vector2(nearCorners[3].x, nearCorners[3].z)) / 2;
+        //只计算平面四边形的外接圆
+        // Vector2 farPoint_1 = (new Vector2(farCorners[0].x, farCorners[0].z) + new Vector2(farCorners[1].x, farCorners[1].z)) / 2;
+        // Vector2 farPoint_2 = (new Vector2(farCorners[2].x, farCorners[2].z) + new Vector2(farCorners[3].x, farCorners[3].z)) / 2;
+        // Vector2 nearPoint_1 = (new Vector2(nearCorners[0].x, nearCorners[0].z) + new Vector2(nearCorners[1].x, nearCorners[1].z)) / 2;
+        // Vector2 nearPoint_2 = (new Vector2(nearCorners[2].x, nearCorners[2].z) + new Vector2(nearCorners[3].x, nearCorners[3].z)) / 2;
         
         // s = (a + b + c + d) / 2
         // A = ((s - a)(s - b)(s - c)(s - d))^0.5
         // R = ((ac + bd)(ad + bc)(ab + cd))^0.5 / 4 / A
-        float a = Vector2.Distance(farPoint_1, farPoint_2),
-            b = Vector2.Distance(farPoint_1, nearPoint_1),
-            c = Vector2.Distance(nearPoint_1, nearPoint_2),
-            d = Vector2.Distance(farPoint_2, nearPoint_2);
-        float s = (a + b + c + d) / 2;
-        float A = Mathf.Pow((s - a) * (s - d) * (s - c) * (s - d), 0.5f);
-        float raidus = Mathf.Pow((a * c + b * d) * (a * d + b * c) * (a * b + c * d), 0.5f) / 4 / A;
+        // float a = Vector2.Distance(farPoint_1, farPoint_2),
+        //     b = Vector2.Distance(farPoint_1, nearPoint_1),
+        //     c = Vector2.Distance(nearPoint_1, nearPoint_2),
+        //     d = Vector2.Distance(farPoint_2, nearPoint_2);
+        // float s = (a + b + c + d) / 2;
+        // float A = Mathf.Pow((s - a) * (s - d) * (s - c) * (s - d), 0.5f);
+        // float radius = Mathf.Pow((a * c + b * d) * (a * d + b * c) * (a * b + c * d), 0.5f) / 4 / A;
         
-        // Debug.Log(raidus);
         
-        Vector2 sphereCenter = Vector2.zero;
-        ComputeSphere.CSM_Only_ComputeSphereIntersection(farPoint_1, nearPoint_1, raidus, out sphereCenter);
-        Vector3 sphereCenter_V3 = new Vector3(sphereCenter.x, 0, sphereCenter.y);
-        Vector3[] points =
-        {
-            new Vector3(sphereCenter.x - raidus, -raidus, sphereCenter.y - raidus), new Vector3(sphereCenter.x - raidus, -raidus, sphereCenter.y + raidus),
-            new Vector3(sphereCenter.x - raidus, raidus, sphereCenter.y - raidus), new Vector3(sphereCenter.x - raidus, raidus, sphereCenter.y + raidus),
-            new Vector3(sphereCenter.x + raidus, -raidus, sphereCenter.y - raidus), new Vector3(sphereCenter.x + raidus, -raidus, sphereCenter.y + raidus),
-            new Vector3(sphereCenter.x + raidus, raidus, sphereCenter.y - raidus), new Vector3(sphereCenter.x + raidus, raidus, sphereCenter.y + raidus)
-        };
-        for (int i = 0; i < 8; i++)
-        {
-            points[i] = mulMatrix(toLightView, points[i] - sphereCenter_V3, 1) + sphereCenter_V3;
-        }
-        //好处就是在光源空间下，计算AABB盒很方便，只需要取xyz三轴的最大最小值，然后组装
-        // 计算 AABB 包围盒
-        // float[] x = new float[8];
-        // float[] y = new float[8];
-        // float[] z = new float[8];
-        // for(int i = 0; i < 4; i++)
+        //计算整个视椎体的外接圆
+        //这两种计算方法都是不准确的，都无法做到覆盖整个视椎体
+        // ComputeSphere.CSM_Only_ComputeSphereCenter(farCorners[0], nearCorners[0], out Vector3 sphereCenter, out float radius);
+        // Vector3[] points =
         // {
-        //     x[i] = nearCorners[i].x; x[i+4] = farCorners[i].x;
-        //     y[i] = nearCorners[i].y; y[i+4] = farCorners[i].y;
-        //     z[i] = nearCorners[i].z; z[i+4] = farCorners[i].z;
-        // }
-        // float xmin=Mathf.Min(x), xmax=Mathf.Max(x);
-        // float ymin=Mathf.Min(y), ymax=Mathf.Max(y);
-        // float zmin=Mathf.Min(z), zmax=Mathf.Max(z);
-        //
-        // // 包围盒顶点转世界坐标
-        // Vector3[] points = {
-        //     new Vector3(xmin, ymin, zmin), new Vector3(xmin, ymin, zmax), new Vector3(xmin, ymax, zmin), new Vector3(xmin, ymax, zmax),
-        //     new Vector3(xmax, ymin, zmin), new Vector3(xmax, ymin, zmax), new Vector3(xmax, ymax, zmin), new Vector3(xmax, ymax, zmax)
+        //     new Vector3(-radius, -radius, sphereCenter.z - radius), new Vector3(-radius, -radius, sphereCenter.z + radius),
+        //     new Vector3(-radius, radius, sphereCenter.z - radius), new Vector3(-radius, radius, sphereCenter.z + radius),
+        //     new Vector3(radius, -radius, sphereCenter.z - radius), new Vector3(radius, -radius, sphereCenter.z + radius),
+        //     new Vector3(radius, radius, sphereCenter.z - radius), new Vector3(radius, radius, sphereCenter.z + radius)
         // };
-        
-        // //乘以逆矩阵回去
-        // for(int i = 0; i < 8; i++)
-        //     points[i] = mulMatrix(toLightViewInv, points[i], 1.0f);
-        // // 视锥体顶还原
-        // for(int i = 0; i < 4; i++)
+        // for (int i = 0; i < 8; i++)
         // {
-        //     farCorners[i] = mulMatrix(toLightViewInv, farCorners[i], 1.0f);
-        //     nearCorners[i] = mulMatrix(toLightViewInv, nearCorners[i], 1.0f);
+        //     points[i] -= sphereCenter;
+        //     points[i] = mulMatrix(toLightView, points[i], 1);
+        //     points[i] += sphereCenter;
         // }
+        //好处就是在光源空间下，计算AABB盒很方便，只需要取xyz三轴的最大最小值，然后组装
+        // 视锥体顶点转光源方向
+        for(int i = 0; i < 4; i++)
+        {
+            farCorners[i] = mulMatrix(toLightView, farCorners[i], 1.0f);
+            nearCorners[i] = mulMatrix(toLightView, nearCorners[i], 1.0f);
+        }
+        // 计算 AABB 包围盒
+        float[] x = new float[8];
+        float[] y = new float[8];
+        float[] z = new float[8];
+        for(int i = 0; i < 4; i++)
+        {
+            x[i] = nearCorners[i].x; x[i+4] = farCorners[i].x;
+            y[i] = nearCorners[i].y; y[i+4] = farCorners[i].y;
+            z[i] = nearCorners[i].z; z[i+4] = farCorners[i].z;
+        }
+        float xmin=Mathf.Min(x), xmax=Mathf.Max(x);
+        float ymin=Mathf.Min(y), ymax=Mathf.Max(y);
+        float zmin=Mathf.Min(z), zmax=Mathf.Max(z);
+        
+        // 包围盒顶点转世界坐标
+        Vector3[] points = {
+            new Vector3(xmin, ymin, zmin), new Vector3(xmin, ymin, zmax), new Vector3(xmin, ymax, zmin), new Vector3(xmin, ymax, zmax),
+            new Vector3(xmax, ymin, zmin), new Vector3(xmax, ymin, zmax), new Vector3(xmax, ymax, zmin), new Vector3(xmax, ymax, zmax)
+        };
+        
+        //乘以逆矩阵回去
+        for(int i = 0; i < 8; i++)
+            points[i] = mulMatrix(toLightViewInv, points[i], 1.0f);
+        // 视锥体顶还原
+        for(int i = 0; i < 4; i++)
+        {
+            farCorners[i] = mulMatrix(toLightViewInv, farCorners[i], 1.0f);
+            nearCorners[i] = mulMatrix(toLightViewInv, nearCorners[i], 1.0f);
+        }
         
         return points;
     }
